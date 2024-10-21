@@ -1,17 +1,16 @@
 import * as _ from "lodash";
 
 import {
-    InputBoxOptions,
-    OpenDialogOptions,
     Uri,
     window,
-    workspace,
+    QuickPickItem
 } from "vscode";
 import { existsSync, lstatSync, writeFile } from "fs";
-import { getDefaultViewModel, getDefaultViewModelType, getDefaultViewModelRouteType } from "../templates/index";
+import { getDefaultViewModel, getDefaultViewModelType, getDefaultViewModelRouteType, getDefaultViewModelScreen } from "../templates/index";
+import { getFlutterProjectName } from "../utils/pubspec_util";
 
 export const newViewModel = async (uri: Uri) => {
-    const viewModelName = await promptForVieModelName();
+    const viewModelName = await promptForViewModelName();
 
     if (_.isNil(viewModelName) || viewModelName.trim() === "") {
         window.showErrorMessage("The ViewModel name must not be empty");
@@ -29,11 +28,28 @@ export const newViewModel = async (uri: Uri) => {
         targetDirectory = uri.fsPath;
     }
 
+    const isStatelessWidgetType = await promptForIfStatelessWidgetType();
+
+    if (isStatelessWidgetType == null) {
+        window.showErrorMessage("Please select a valid widget type");
+        return;
+    }
+
     const changeCase = await import("change-case");
+
     const pascalCaseVieModelName = changeCase.pascalCase(viewModelName);
+    const projectName = await getFlutterProjectName();
+
+    if (projectName == null) {
+        window.showErrorMessage(
+            `Error:
+            Can't get project name`
+        );
+        return;
+    }
 
     try {
-        await generateBlocCode(viewModelName, targetDirectory);
+        await generateBlocCode(viewModelName, targetDirectory, projectName, isStatelessWidgetType);
         window.showInformationMessage(
             `Successfully Generated ${pascalCaseVieModelName} Bloc`
         );
@@ -45,13 +61,30 @@ export const newViewModel = async (uri: Uri) => {
     }
 }
 
-function promptForVieModelName(): Thenable<string | undefined> {
+function promptForViewModelName(): Thenable<string | undefined> {
     const inputOptions = {
         prompt: "Enter ViewModel name",
         placeHolder: "ViewModelName"
     };
 
     return window.showInputBox(inputOptions);
+}
+
+async function promptForIfStatelessWidgetType(): Promise<boolean | null> {
+    const options: QuickPickItem[] = [
+        { label: 'Stateless', description: 'Create a Stateless Widget' },
+        { label: 'Stateful', description: 'Create a Stateful Widget' }
+    ];
+
+    const selectedOption = await window.showQuickPick(options, {
+        placeHolder: 'Select Widget Type'
+    });
+
+    if (!selectedOption) {
+        return null;
+    }
+
+    return selectedOption.label === 'Stateless';
 }
 
 async function promptForTargetDirectory() {
@@ -72,11 +105,14 @@ async function promptForTargetDirectory() {
 async function generateBlocCode(
     viewModelName: string,
     targetDirectory: string,
+    projectName: string,
+    isStatelessWidgetType: boolean,
 ) {
     await Promise.all([
         createViewModelTemplate(viewModelName, targetDirectory),
-        createViewModelTypeTemplate(viewModelName, targetDirectory),
-        createViewModelRouteTypeTemplate(viewModelName, targetDirectory),
+        createViewModelTypeTemplate(viewModelName, targetDirectory, projectName),
+        createViewModelRouteTypeTemplate(viewModelName, targetDirectory, projectName),
+        createViewModelScreenTemplate(viewModelName, targetDirectory, projectName, isStatelessWidgetType)
     ]);
 }
 
@@ -88,9 +124,9 @@ async function createViewModelTemplate(
     const snakeCaseViewModelName = changeCase.snakeCase(viewModelName);
     const pascalCaseVieModelName = changeCase.pascalCase(viewModelName);
 
-    const targetPath = `${targetDirectory}/${snakeCaseViewModelName}_view_model.dart`;
+    const targetPath = `${targetDirectory}/${snakeCaseViewModelName}_screen_view_model.dart`;
     if (existsSync(targetPath)) {
-        throw Error(`${snakeCaseViewModelName}_view_model.dart already exists`);
+        throw Error(`${snakeCaseViewModelName}_screen_view_model.dart already exists`);
     }
     return new Promise<void>(async (resolve, reject) => {
         writeFile(
@@ -110,20 +146,21 @@ async function createViewModelTemplate(
 
 async function createViewModelTypeTemplate(
     viewModelName: string,
-    targetDirectory: string
+    targetDirectory: string,
+    projectName: string
 ) {
     const changeCase = await import("change-case");
     const snakeCaseViewModelName = changeCase.snakeCase(viewModelName);
     const pascalCaseVieModelName = changeCase.pascalCase(viewModelName);
 
-    const targetPath = `${targetDirectory}/${snakeCaseViewModelName}_view_model_type.dart`;
+    const targetPath = `${targetDirectory}/${snakeCaseViewModelName}_screen_view_model_type.dart`;
     if (existsSync(targetPath)) {
-        throw Error(`${snakeCaseViewModelName}_view_model_type.dart already exists`);
+        throw Error(`${snakeCaseViewModelName}_screen_view_model_type.dart already exists`);
     }
     return new Promise<void>(async (resolve, reject) => {
         writeFile(
             targetPath,
-            getDefaultViewModelType(pascalCaseVieModelName),
+            getDefaultViewModelType(pascalCaseVieModelName, projectName),
             'utf8',
             (error) => {
                 if (error) {
@@ -138,20 +175,50 @@ async function createViewModelTypeTemplate(
 
 async function createViewModelRouteTypeTemplate(
     viewModelName: string,
-    targetDirectory: string
+    targetDirectory: string,
+    projectName: string
 ) {
     const changeCase = await import("change-case");
     const snakeCaseViewModelName = changeCase.snakeCase(viewModelName);
     const pascalCaseVieModelName = changeCase.pascalCase(viewModelName);
 
-    const targetPath = `${targetDirectory}/${snakeCaseViewModelName}_view_model_route_type.dart`;
+    const targetPath = `${targetDirectory}/${snakeCaseViewModelName}_screen_view_model_route_type.dart`;
     if (existsSync(targetPath)) {
-        throw Error(`${snakeCaseViewModelName}_view_model_route_type.dart already exists`);
+        throw Error(`${snakeCaseViewModelName}_screen_view_model_route_type.dart already exists`);
     }
     return new Promise<void>(async (resolve, reject) => {
         writeFile(
             targetPath,
-            getDefaultViewModelRouteType(pascalCaseVieModelName),
+            getDefaultViewModelRouteType(pascalCaseVieModelName, projectName),
+            'utf8',
+            (error) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve();
+            }
+        );
+    });
+}
+async function createViewModelScreenTemplate(
+    viewModelName: string,
+    targetDirectory: string,
+    projectName: string,
+    isStatelessWidgetType: boolean
+) {
+    const changeCase = await import("change-case");
+    const snakeCaseViewModelName = changeCase.snakeCase(viewModelName);
+    const pascalCaseVieModelName = changeCase.pascalCase(viewModelName);
+
+    const targetPath = `${targetDirectory}/${snakeCaseViewModelName}_screen.dart`;
+    if (existsSync(targetPath)) {
+        throw Error(`${snakeCaseViewModelName}_screen.dart already exists`);
+    }
+    return new Promise<void>(async (resolve, reject) => {
+        writeFile(
+            targetPath,
+            getDefaultViewModelScreen(snakeCaseViewModelName, pascalCaseVieModelName, projectName, isStatelessWidgetType),
             'utf8',
             (error) => {
                 if (error) {

@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@types/change-case": "^0.0.30",
+    "@types/js-yaml": "^4.0.9",
     "@types/lodash": "^4.17.11",
     "@types/mkdirp": "^1.0.2",
     "@types/mocha": "^10.0.8",
@@ -51,6 +52,7 @@
   },
   "dependencies": {
     "change-case": "^5.4.4",
+    "js-yaml": "^4.1.0",
     "lodash": "^4.17.21"
   }
 }
