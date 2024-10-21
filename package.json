@@ -1,8 +1,24 @@
 {
   "name": "mvvm-flutter",
   "displayName": "mvvm-flutter",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Simplifies the creation of MVVM architecture files in Flutter projects",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PepperoniOnzo/mvvm-flutter"
+  },
+  "keywords": [
+    "vscode",
+    "flutter",
+    "mvvm",
+    "file generator",
+    "dart"
+  ],
+  "publisher": "PepperoniOnzo",
+  "author": {
+    "name": "PepperoniOnzo"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.94.0"
   },
@@ -11,6 +27,7 @@
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
+  "icon": "assets/logo.png",
   "contributes": {
     "commands": [
       {
