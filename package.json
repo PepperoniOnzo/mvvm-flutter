@@ -2,7 +2,7 @@
   "name": "mvvm-flutter",
   "displayName": "mvvm-flutter",
   "description": "Simplifies the creation of MVVM architecture files in Flutter projects",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/PepperoniOnzo/mvvm-flutter"
@@ -33,6 +33,10 @@
       {
         "command": "mvvm-flutter.new-view-model",
         "title": "MVVP: New ViewModel"
+      },
+      {
+        "command": "mvvm-flutter.new-project",
+        "title": "MVVP: New Project"
       }
     ],
     "menus": {
