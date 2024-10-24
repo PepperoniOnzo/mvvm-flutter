@@ -7,7 +7,7 @@ import {
 } from "vscode";
 import { existsSync, lstatSync, writeFile } from "fs";
 import { getDefaultViewModel, getDefaultViewModelType, getDefaultViewModelRouteType, getDefaultViewModelScreen } from "../templates/index";
-import { getFlutterProjectName } from "../utils/pubspec_util";
+import { getFlutterProjectName } from "../utils/index";
 
 export const newViewModel = async (uri: Uri) => {
     const viewModelName = await promptForViewModelName();
@@ -49,9 +49,9 @@ export const newViewModel = async (uri: Uri) => {
     }
 
     try {
-        await generateBlocCode(viewModelName, targetDirectory, projectName, isStatelessWidgetType);
+        await generateViewModel(viewModelName, targetDirectory, projectName, isStatelessWidgetType);
         window.showInformationMessage(
-            `Successfully Generated ${pascalCaseVieModelName} Bloc`
+            `Successfully Generated ${pascalCaseVieModelName} ViewModel`
         );
     } catch (error) {
         window.showErrorMessage(
@@ -90,7 +90,7 @@ async function promptForIfStatelessWidgetType(): Promise<boolean | null> {
 async function promptForTargetDirectory() {
     const options = {
         canSelectMany: false,
-        openLabel: "Select a folder to create the bloc in",
+        openLabel: "Select a folder to create the ViewModel in",
         canSelectFolders: true,
     };
 
@@ -102,7 +102,7 @@ async function promptForTargetDirectory() {
     });
 }
 
-async function generateBlocCode(
+async function generateViewModel(
     viewModelName: string,
     targetDirectory: string,
     projectName: string,
